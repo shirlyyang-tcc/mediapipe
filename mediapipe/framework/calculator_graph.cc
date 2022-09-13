@@ -458,6 +458,7 @@ absl::Status CalculatorGraph::ObserveOutputStream(
     const std::string& stream_name,
     std::function<absl::Status(const Packet&)> packet_callback,
     bool observe_timestamp_bounds) {
+      LOG(INFO) << "ObserveOutputStream";
   RET_CHECK(initialized_).SetNoLogging()
       << "CalculatorGraph is not initialized.";
   // TODO Allow output observers to be attached by graph level
@@ -478,6 +479,8 @@ absl::Status CalculatorGraph::ObserveOutputStream(
 
 absl::StatusOr<OutputStreamPoller> CalculatorGraph::AddOutputStreamPoller(
     const std::string& stream_name, bool observe_timestamp_bounds) {
+  LOG(INFO) << "AddOutputStreamPoller";
+
   RET_CHECK(initialized_).SetNoLogging()
       << "CalculatorGraph is not initialized.";
   int output_stream_index = validated_graph_->OutputStreamIndex(stream_name);

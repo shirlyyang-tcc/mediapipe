@@ -98,6 +98,7 @@ absl::Status OutputSidePacketsToLocalFile(mediapipe::CalculatorGraph& graph) {
 }
 
 absl::Status RunMPPGraph() {
+  LOG(INFO) << "INTO RunMPPGraph";
   std::string calculator_graph_config_contents;
   MP_RETURN_IF_ERROR(mediapipe::file::GetContents(
       absl::GetFlag(FLAGS_calculator_graph_config_file),

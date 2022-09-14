@@ -58,6 +58,7 @@ class TfLiteModelCalculator : public CalculatorBase {
   }
 
   absl::Status Open(CalculatorContext* cc) override {
+    LOG(INFO) << "TfLiteModelCalculator open:";
     const Packet& model_packet = cc->InputSidePackets().Tag("MODEL_BLOB");
     const std::string& model_blob = model_packet.Get<std::string>();
     std::unique_ptr<tflite::FlatBufferModel> model =
@@ -78,6 +79,8 @@ class TfLiteModelCalculator : public CalculatorBase {
   }
 
   absl::Status Process(CalculatorContext* cc) override {
+    LOG(INFO) << "TfLiteModelCalculator process";
+
     return absl::OkStatus();
   }
 };

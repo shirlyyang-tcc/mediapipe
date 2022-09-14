@@ -197,6 +197,7 @@ class ImageToTensorCalculator : public Node {
   }
 
   absl::Status Open(CalculatorContext* cc) {
+    LOG(INFO) << "image_to_tensor_calculator open";
     options_ = cc->Options<mediapipe::ImageToTensorCalculatorOptions>();
     output_width_ = options_.output_tensor_width();
     output_height_ = options_.output_tensor_height();
@@ -217,8 +218,12 @@ class ImageToTensorCalculator : public Node {
   }
 
   absl::Status Process(CalculatorContext* cc) {
+    LOG(INFO) << "image_to_tensor_calculator Process";
+
     if ((kIn(cc).IsConnected() && kIn(cc).IsEmpty()) ||
         (kInGpu(cc).IsConnected() && kInGpu(cc).IsEmpty())) {
+      LOG(INFO) << "image_to_tensor_calculator Process+" << kIn(cc).IsConnected() << kIn(cc).IsEmpty();
+
       // Timestamp bound update happens automatically.
       return absl::OkStatus();
     }
@@ -226,11 +231,14 @@ class ImageToTensorCalculator : public Node {
     absl::optional<mediapipe::NormalizedRect> norm_rect;
     if (kInNormRect(cc).IsConnected()) {
       if (kInNormRect(cc).IsEmpty()) {
+      LOG(INFO) << "image_to_tensor_calculator Process 1";
+        
         // Timestamp bound update happens automatically. (See Open().)
         return absl::OkStatus();
       }
       norm_rect = *kInNormRect(cc);
       if (norm_rect->width() == 0 && norm_rect->height() == 0) {
+        LOG(INFO) << "image_to_tensor_calculator Process 2";
         // WORKAROUND: some existing graphs may use sentinel rects {width=0,
         // height=0, ...} quite often and calculator has to handle them
         // gracefully by updating timestamp bound instead of returning failure.
@@ -270,6 +278,7 @@ class ImageToTensorCalculator : public Node {
     auto result = std::make_unique<std::vector<Tensor>>();
     result->push_back(std::move(tensor));
     kOutTensors(cc).Send(std::move(result));
+    LOG(INFO) << "image_to_tensor_calculator Process Done";
 
     return absl::OkStatus();
   }

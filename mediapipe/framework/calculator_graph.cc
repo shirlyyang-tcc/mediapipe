@@ -887,6 +887,7 @@ absl::Status CalculatorGraph::AddPacketToInputStreamInternal(
   int node_id = mediapipe::FindOrDie(graph_input_stream_node_ids_, stream_name);
   CHECK_GE(node_id, validated_graph_->CalculatorInfos().size());
   {
+
     absl::MutexLock lock(&full_input_streams_mutex_);
     if (full_input_streams_.empty()) {
       return mediapipe::FailedPreconditionErrorBuilder(MEDIAPIPE_LOC)
@@ -895,6 +896,7 @@ absl::Status CalculatorGraph::AddPacketToInputStreamInternal(
     }
     if (graph_input_stream_add_mode_ ==
         GraphInputStreamAddMode::ADD_IF_NOT_FULL) {
+
       if (has_error_) {
         absl::Status error_status;
         GetCombinedErrors("Graph has errors: ", &error_status);
@@ -907,11 +909,13 @@ absl::Status CalculatorGraph::AddPacketToInputStreamInternal(
       }
     } else if (graph_input_stream_add_mode_ ==
                GraphInputStreamAddMode::WAIT_TILL_NOT_FULL) {
+
       // Wait until this stream is not being throttled.
       // TODO: instead of checking has_error_, we could just check
       // if the graph is done. That could also be indicated by returning an
       // error from WaitUntilGraphInputStreamUnthrottled.
       while (!has_error_ && !full_input_streams_[node_id].empty()) {
+
         // TODO: allow waiting for a specific stream?
         scheduler_.WaitUntilGraphInputStreamUnthrottled(
             &full_input_streams_mutex_);
@@ -938,11 +942,13 @@ absl::Status CalculatorGraph::AddPacketToInputStreamInternal(
   // potentially lead to the max queue size being exceeded by one packet at most
   // because we don't have the lock over the input stream.
   (*stream)->AddPacket(std::forward<T>(packet));
+
   if (has_error_) {
     absl::Status error_status;
     GetCombinedErrors("Graph has errors: ", &error_status);
     return error_status;
   }
+
   (*stream)->PropagateUpdatesToMirrors();
 
   VLOG(2) << "Packet added directly to: " << stream_name;

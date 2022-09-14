@@ -14,6 +14,7 @@
 
 licenses(["notice"])
 
+load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
 package(default_visibility = ["//mediapipe/examples:__subpackages__"])
 
 cc_binary(
@@ -38,6 +39,42 @@ cc_binary(
         "//mediapipe/examples/desktop:demo_run_graph_main",
         "//mediapipe/graphs/face_mesh:desktop_live_calculators",
     ],
+)
+# 给wasm使用
+cc_binary(
+    name = "my_face_mesh_cpu",
+    srcs = ["entry.cc"],
+    visibility = ["//visibility:public"],
+    data = [
+        "//mediapipe/modules/face_landmark:face_landmark_with_attention.tflite",
+        "//mediapipe/modules/face_landmark:face_landmark.tflite",
+    ],
+    deps = [
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:image_frame",
+        "//mediapipe/framework/formats:image_frame_opencv",
+        "//mediapipe/framework/port:file_helpers",
+        "//mediapipe/framework/port:opencv_highgui",
+        "//mediapipe/framework/port:opencv_imgproc",
+        "//mediapipe/framework/port:opencv_video",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "//mediapipe/framework/formats:rect_cc_proto",
+        "//mediapipe/framework/formats:landmark_cc_proto",
+        "//mediapipe/graphs/face_mesh:desktop_live_calculators"
+    ],
+    linkopts = [
+        "--bind",  # Enable embind
+        "-s USE_PTHREADS=0",
+        "-s ALLOW_MEMORY_GROWTH=1"
+    ],
+)
+# 编译成wasm
+wasm_cc_binary(
+    name = "wasm",
+    cc_target = ":my_face_mesh_cpu",
 )
 
 # Linux only

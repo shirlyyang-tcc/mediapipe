@@ -60,11 +60,14 @@ absl::Status InferenceCalculatorCpuImpl::UpdateContract(
 }
 
 absl::Status InferenceCalculatorCpuImpl::Open(CalculatorContext* cc) {
+  LOG(INFO) << "inference calculator open";
+
   ASSIGN_OR_RETURN(inference_runner_, CreateInferenceRunner(cc));
   return absl::OkStatus();
 }
 
 absl::Status InferenceCalculatorCpuImpl::Process(CalculatorContext* cc) {
+  LOG(INFO) << "inference calculator process";
   if (kInTensors(cc).IsEmpty()) {
     return absl::OkStatus();
   }

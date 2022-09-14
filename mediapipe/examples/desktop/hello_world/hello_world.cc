@@ -18,6 +18,7 @@
 #include "mediapipe/framework/port/logging.h"
 #include "mediapipe/framework/port/parse_text_proto.h"
 #include "mediapipe/framework/port/status.h"
+#include <stdio.h>
 
 namespace mediapipe {
 
@@ -41,22 +42,35 @@ absl::Status PrintHelloWorld() {
 
   CalculatorGraph graph;
   MP_RETURN_IF_ERROR(graph.Initialize(config));
-  ASSIGN_OR_RETURN(OutputStreamPoller poller,
-                   graph.AddOutputStreamPoller("out"));
+  // ASSIGN_OR_RETURN(OutputStreamPoller poller,
+                  //  graph.AddOutputStreamPoller("out"));
+  graph.ObserveOutputStream("out", [&](const mediapipe::Packet& p) {
+      std::string a = p.Get<std::string>();
+      std::cout << "flag 4"<< std::endl;
+      std::cout << a <<std::endl;
+      // return 80;
+      return absl::OkStatus();
+  });
   MP_RETURN_IF_ERROR(graph.StartRun({}));
   // Give 10 input packets that contains the same string "Hello World!".
   for (int i = 0; i < 10; ++i) {
     MP_RETURN_IF_ERROR(graph.AddPacketToInputStream(
         "in", MakePacket<std::string>("Hello World!").At(Timestamp(i))));
+    LOG(INFO) << "Add Packet";
   }
   // Close the input stream "in".
   MP_RETURN_IF_ERROR(graph.CloseInputStream("in"));
   mediapipe::Packet packet;
+  LOG(INFO) << "Waiting";
+
   // Get the output packets string.
-  while (poller.Next(&packet)) {
-    LOG(INFO) << packet.Get<std::string>();
-  }
-  return graph.WaitUntilDone();
+  // while (poller.Next(&packet)) {
+  //   printf("packet return");
+  //   LOG(INFO) << packet.Get<std::string>();
+  //   // printf("i am here");
+  // }
+  // return graph.WaitUntilDone();
+  return graph.WaitUntilIdle();
 }
 }  // namespace mediapipe
 
@@ -64,4 +78,7 @@ int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
   CHECK(mediapipe::PrintHelloWorld().ok());
   return 0;
+
 }
+
+

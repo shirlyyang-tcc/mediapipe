@@ -45,6 +45,7 @@ class OutputStreamPoller {
     if (!poller) {
       return false;
     }
+    LOG(INFO) << "POLLER NEXT";
     return poller->Next(packet);
   }
 

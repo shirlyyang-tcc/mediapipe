@@ -72,6 +72,7 @@ class TfLiteCustomOpResolverCalculator : public CalculatorBase {
   }
 
   absl::Status Open(CalculatorContext* cc) override {
+    LOG(INFO) << "TfLiteCustomOpResolverCalculator open";
     cc->SetOffset(TimestampDiff(0));
 
     const TfLiteCustomOpResolverCalculatorOptions& options =
@@ -96,6 +97,8 @@ class TfLiteCustomOpResolverCalculator : public CalculatorBase {
   }
 
   absl::Status Process(CalculatorContext* cc) override {
+    LOG(INFO) << "TfLiteCustomOpResolverCalculator process";
+
     return absl::OkStatus();
   }
 };

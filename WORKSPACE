@@ -1,6 +1,22 @@
 workspace(name = "mediapipe")
 
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+#emsdk configure
+http_archive(
+    name = "emsdk",
+    sha256 = "a9ec4bef588c407b0f5a8efddd1ca86f6a3a5376e4ecbacaa975c64cb546399c",
+    strip_prefix = "emsdk-3.1.21/bazel",
+    url = "https://github.com/emscripten-core/emsdk/archive/refs/tags/3.1.21.tar.gz",
+)
+
+load("@emsdk//:deps.bzl", emsdk_deps = "deps")
+emsdk_deps()
+
+load("@emsdk//:emscripten_deps.bzl", emsdk_emscripten_deps = "emscripten_deps")
+emsdk_emscripten_deps(emscripten_version = "3.1.21")
+
 
 # Protobuf expects an //external:python_headers target
 bind(

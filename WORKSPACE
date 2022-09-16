@@ -6,9 +6,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 #emsdk configure
 http_archive(
     name = "emsdk",
-    sha256 = "a9ec4bef588c407b0f5a8efddd1ca86f6a3a5376e4ecbacaa975c64cb546399c",
-    strip_prefix = "emsdk-3.1.21/bazel",
-    url = "https://github.com/emscripten-core/emsdk/archive/refs/tags/3.1.21.tar.gz",
+    sha256 = "22b3a59360a7985c2e282adfc410c779cc103d132c1c1963e95ef643b9111009",
+    strip_prefix = "emsdk-0.0.4/bazel",
+    url = "https://github.com/shirlyyang-tcc/emsdk/archive/refs/tags/0.0.4.tar.gz",
 )
 
 load("@emsdk//:deps.bzl", emsdk_deps = "deps")
@@ -260,7 +260,7 @@ http_archive(
 new_local_repository(
     name = "linux_opencv",
     build_file = "@//third_party:opencv_linux.BUILD",
-    path = "/usr",
+    path = "/usr/local",
 )
 
 new_local_repository(

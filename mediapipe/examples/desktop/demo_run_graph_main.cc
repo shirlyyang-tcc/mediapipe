@@ -39,10 +39,10 @@ constexpr char kInputStream[] = "image";
 constexpr char kOutputStream[] = "face_landmarks";
 constexpr char kWindowName[] = "MediaPipe";
 
-ABSL_FLAG(std::string, calculator_graph_config_file, "/Users/shirlyyang/workspace/mediapipe/mediapipe/modules/face_landmark/face_landmark_cpu.pbtxt",
+ABSL_FLAG(std::string, calculator_graph_config_file, "/home/shirlyyang/mediapipe/mediapipe/modules/face_landmark/face_landmark_cpu.pbtxt",
           "Name of file containing text format CalculatorGraphConfig proto.");
 // ABSL_FLAG(std::string, input_video_path, "",
-ABSL_FLAG(std::string, input_video_path, "/Users/shirlyyang/Desktop/acc9c292ab4feef21a9d39efa3af58bd.mov",
+ABSL_FLAG(std::string, input_video_path, "/home/shirlyyang/桌面/acc9c292ab4feef21a9d39efa3af58bd.mov",
           "Full path of video to load. "
           "If not provided, attempt to use a webcam.");
 ABSL_FLAG(std::string, output_video_path, "",
@@ -162,7 +162,7 @@ absl::Status RunMPPGraph() {
         kInputStream, mediapipe::Adopt(input_frame.release())
                           .At(mediapipe::Timestamp(frame_timestamp_us))));
     MP_RETURN_IF_ERROR(graph.AddPacketToInputStream(
-    "roi", MakePacket<mediapipe::NormalizedRect>(GetTestRoi())
+    "roi", mediapipe::MakePacket<mediapipe::NormalizedRect>(GetTestRoi())
                .At(mediapipe::Timestamp(frame_timestamp_us))));
     LOG(INFO) << "sent frame";
     

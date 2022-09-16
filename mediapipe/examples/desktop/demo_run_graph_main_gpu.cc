@@ -30,20 +30,29 @@
 #include "mediapipe/gpu/gl_calculator_helper.h"
 #include "mediapipe/gpu/gpu_buffer.h"
 #include "mediapipe/gpu/gpu_shared_data_internal.h"
+#include "mediapipe/framework/calculator_framework.h"
+#include "mediapipe/framework/formats/rect.pb.h"
 
-constexpr char kInputStream[] = "input_video";
-constexpr char kOutputStream[] = "output_video";
+constexpr char kInputStream[] = "image";
+constexpr char kOutputStream[] = "face_landmarks";
 constexpr char kWindowName[] = "MediaPipe";
 
-ABSL_FLAG(std::string, calculator_graph_config_file, "",
+ABSL_FLAG(std::string, calculator_graph_config_file, "/home/shirlyyang/mediapipe/mediapipe/modules/face_landmark/face_landmark_gpu.pbtxt",
           "Name of file containing text format CalculatorGraphConfig proto.");
-ABSL_FLAG(std::string, input_video_path, "",
+ABSL_FLAG(std::string, input_video_path, "/home/shirlyyang/桌面/acc9c292ab4feef21a9d39efa3af58bd.mov",
           "Full path of video to load. "
           "If not provided, attempt to use a webcam.");
 ABSL_FLAG(std::string, output_video_path, "",
           "Full path of where to save result (.mp4 only). "
           "If not provided, show result in a window.");
-
+mediapipe::NormalizedRect GetTestRoi() {
+  mediapipe::NormalizedRect result;
+  result.set_x_center(0.5);
+  result.set_y_center(0.5);
+  result.set_width(1);
+  result.set_height(1);
+  return result;
+}
 absl::Status RunMPPGraph() {
   std::string calculator_graph_config_contents;
   MP_RETURN_IF_ERROR(mediapipe::file::GetContents(
@@ -67,24 +76,24 @@ absl::Status RunMPPGraph() {
 
   LOG(INFO) << "Initialize the camera or load the video.";
   cv::VideoCapture capture;
-  const bool load_video = !absl::GetFlag(FLAGS_input_video_path).empty();
-  if (load_video) {
+  // const bool load_video = !absl::GetFlag(FLAGS_input_video_path).empty();
+  // if (load_video) {
     capture.open(absl::GetFlag(FLAGS_input_video_path));
-  } else {
-    capture.open(0);
-  }
+  // } else {
+  //   capture.open(0);
+  // }
   RET_CHECK(capture.isOpened());
-
-  cv::VideoWriter writer;
-  const bool save_video = !absl::GetFlag(FLAGS_output_video_path).empty();
-  if (!save_video) {
-    cv::namedWindow(kWindowName, /*flags=WINDOW_AUTOSIZE*/ 1);
-#if (CV_MAJOR_VERSION >= 3) && (CV_MINOR_VERSION >= 2)
-    capture.set(cv::CAP_PROP_FRAME_WIDTH, 640);
-    capture.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-    capture.set(cv::CAP_PROP_FPS, 30);
-#endif
-  }
+  LOG(INFO) << "Video opened.";
+//   cv::VideoWriter writer;
+//   const bool save_video = !absl::GetFlag(FLAGS_output_video_path).empty();
+//   if (!save_video) {
+//     cv::namedWindow(kWindowName, /*flags=WINDOW_AUTOSIZE*/ 1);
+// #if (CV_MAJOR_VERSION >= 3) && (CV_MINOR_VERSION >= 2)
+//     capture.set(cv::CAP_PROP_FRAME_WIDTH, 640);
+//     capture.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+//     capture.set(cv::CAP_PROP_FPS, 30);
+// #endif
+//   }
 
   LOG(INFO) << "Start running the calculator graph.";
   ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
@@ -107,9 +116,9 @@ absl::Status RunMPPGraph() {
     }
     cv::Mat camera_frame;
     cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGBA);
-    if (!load_video) {
-      cv::flip(camera_frame, camera_frame, /*flipcode=HORIZONTAL*/ 1);
-    }
+    // if (!load_video) {
+    //   cv::flip(camera_frame, camera_frame, /*flipcode=HORIZONTAL*/ 1);
+    // }
 
     // Wrap Mat into an ImageFrame.
     auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
@@ -133,54 +142,63 @@ absl::Status RunMPPGraph() {
           MP_RETURN_IF_ERROR(graph.AddPacketToInputStream(
               kInputStream, mediapipe::Adopt(gpu_frame.release())
                                 .At(mediapipe::Timestamp(frame_timestamp_us))));
+          MP_RETURN_IF_ERROR(graph.AddPacketToInputStream(
+    "roi", mediapipe::MakePacket<mediapipe::NormalizedRect>(GetTestRoi())
+               .At(mediapipe::Timestamp(frame_timestamp_us))));
           return absl::OkStatus();
         }));
 
     // Get the graph result packet, or stop if that fails.
     mediapipe::Packet packet;
     if (!poller.Next(&packet)) break;
-    std::unique_ptr<mediapipe::ImageFrame> output_frame;
-
-    // Convert GpuBuffer to ImageFrame.
-    MP_RETURN_IF_ERROR(gpu_helper.RunInGlContext(
-        [&packet, &output_frame, &gpu_helper]() -> absl::Status {
-          auto& gpu_frame = packet.Get<mediapipe::GpuBuffer>();
-          auto texture = gpu_helper.CreateSourceTexture(gpu_frame);
-          output_frame = absl::make_unique<mediapipe::ImageFrame>(
-              mediapipe::ImageFormatForGpuBufferFormat(gpu_frame.format()),
-              gpu_frame.width(), gpu_frame.height(),
-              mediapipe::ImageFrame::kGlDefaultAlignmentBoundary);
-          gpu_helper.BindFramebuffer(texture);
-          const auto info = mediapipe::GlTextureInfoForGpuBufferFormat(
-              gpu_frame.format(), 0, gpu_helper.GetGlVersion());
-          glReadPixels(0, 0, texture.width(), texture.height(), info.gl_format,
-                       info.gl_type, output_frame->MutablePixelData());
-          glFlush();
-          texture.Release();
-          return absl::OkStatus();
-        }));
-
-    // Convert back to opencv for display or saving.
-    cv::Mat output_frame_mat = mediapipe::formats::MatView(output_frame.get());
-    if (output_frame_mat.channels() == 4)
-      cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGBA2BGR);
-    else
-      cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
-    if (save_video) {
-      if (!writer.isOpened()) {
-        LOG(INFO) << "Prepare video writer.";
-        writer.open(absl::GetFlag(FLAGS_output_video_path),
-                    mediapipe::fourcc('a', 'v', 'c', '1'),  // .mp4
-                    capture.get(cv::CAP_PROP_FPS), output_frame_mat.size());
-        RET_CHECK(writer.isOpened());
-      }
-      writer.write(output_frame_mat);
-    } else {
-      cv::imshow(kWindowName, output_frame_mat);
-      // Press any key to exit.
-      const int pressed_key = cv::waitKey(5);
-      if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
+    // std::unique_ptr<mediapipe::ImageFrame> output_frame;
+    auto& output = packet.Get<mediapipe::NormalizedLandmarkList>();
+    for (int i = 0; i < 468; i++) {
+      mediapipe::NormalizedLandmark landmark = output.landmark(i);
+      LOG(INFO) << "landmark x" << landmark.x();
     }
+    LOG(INFO) << "poller next||||||";
+   
+    // Convert GpuBuffer to ImageFrame.
+    // MP_RETURN_IF_ERROR(gpu_helper.RunInGlContext(
+    //     [&packet, &output_frame, &gpu_helper]() -> absl::Status {
+    //       auto& gpu_frame = packet.Get<mediapipe::GpuBuffer>();
+    //       auto texture = gpu_helper.CreateSourceTexture(gpu_frame);
+    //       output_frame = absl::make_unique<mediapipe::ImageFrame>(
+    //           mediapipe::ImageFormatForGpuBufferFormat(gpu_frame.format()),
+    //           gpu_frame.width(), gpu_frame.height(),
+    //           mediapipe::ImageFrame::kGlDefaultAlignmentBoundary);
+    //       gpu_helper.BindFramebuffer(texture);
+    //       const auto info = mediapipe::GlTextureInfoForGpuBufferFormat(
+    //           gpu_frame.format(), 0, gpu_helper.GetGlVersion());
+    //       glReadPixels(0, 0, texture.width(), texture.height(), info.gl_format,
+    //                    info.gl_type, output_frame->MutablePixelData());
+    //       glFlush();
+    //       texture.Release();
+    //       return absl::OkStatus();
+    //     }));
+
+    // // Convert back to opencv for display or saving.
+    // cv::Mat output_frame_mat = mediapipe::formats::MatView(output_frame.get());
+    // if (output_frame_mat.channels() == 4)
+    //   cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGBA2BGR);
+    // else
+    //   cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
+    // if (save_video) {
+    //   if (!writer.isOpened()) {
+    //     LOG(INFO) << "Prepare video writer.";
+    //     writer.open(absl::GetFlag(FLAGS_output_video_path),
+    //                 mediapipe::fourcc('a', 'v', 'c', '1'),  // .mp4
+    //                 capture.get(cv::CAP_PROP_FPS), output_frame_mat.size());
+    //     RET_CHECK(writer.isOpened());
+    //   }
+    //   writer.write(output_frame_mat);
+    // } else {
+    //   cv::imshow(kWindowName, output_frame_mat);
+    //   // Press any key to exit.
+    //   const int pressed_key = cv::waitKey(5);
+    //   if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
+    // }
   }
 
   LOG(INFO) << "Shutting down.";

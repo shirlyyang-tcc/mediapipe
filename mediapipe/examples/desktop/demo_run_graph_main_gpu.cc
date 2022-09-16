@@ -30,8 +30,9 @@
 #include "mediapipe/gpu/gl_calculator_helper.h"
 #include "mediapipe/gpu/gpu_buffer.h"
 #include "mediapipe/gpu/gpu_shared_data_internal.h"
-#include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/rect.pb.h"
+#include "mediapipe/framework/formats/landmark.pb.h"
+
 
 constexpr char kInputStream[] = "image";
 constexpr char kOutputStream[] = "face_landmarks";
@@ -107,10 +108,10 @@ absl::Status RunMPPGraph() {
     cv::Mat camera_frame_raw;
     capture >> camera_frame_raw;
     if (camera_frame_raw.empty()) {
-      if (!load_video) {
-        LOG(INFO) << "Ignore empty frames from camera.";
-        continue;
-      }
+      // if (!load_video) {
+      //   LOG(INFO) << "Ignore empty frames from camera.";
+      //   continue;
+      // }
       LOG(INFO) << "Empty frame, end of video reached.";
       break;
     }
@@ -202,7 +203,7 @@ absl::Status RunMPPGraph() {
   }
 
   LOG(INFO) << "Shutting down.";
-  if (writer.isOpened()) writer.release();
+  // if (writer.isOpened()) writer.release();
   MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
   return graph.WaitUntilDone();
 }

@@ -78,7 +78,9 @@ cc_binary(
         "-sUSE_PTHREADS=0",
         "-sALLOW_MEMORY_GROWTH=1",
         "-sMODULARIZE",
-        "--preload-file /home/shirlyyang/mediapipe/mediapipe/modules/face_landmark/face_landmark_cpu.pbtxt@face_landmark_cpu.pbtxt"
+        "--preload-file /home/shirlyyang/mediapipe/mediapipe/modules/face_landmark/face_landmark_cpu.pbtxt@face_landmark_cpu.pbtxt",
+        "--preload-file /home/shirlyyang/mediapipe/mediapipe/modules/face_landmark/face_landmark.tflite@mediapipe/modules/face_detection/face_detection.tflite",
+        "--preload-file /home/shirlyyang/mediapipe/mediapipe/modules/face_landmark/face_landmark_with_attention.tflite@mediapipe/modules/face_detection/face_landmark_with_attention.tflite"
         # "-I/usr/local/include/"
     ],
 )

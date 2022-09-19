@@ -27,6 +27,7 @@
         <canvas id="result-canvas"></canvas>
     </body>
     <script>
+        let imgPointer
         async function initDetector() {
             return new Promise((resolve, rejct) => {
                 const init = new Module()
@@ -38,12 +39,26 @@
             })
 
         }
-        
+        function passToWasm(uint8ArrData, Module) {
+            // copying the uint8ArrData to the heap
+           const numBytes = uint8ArrData.length * uint8ArrData.BYTES_PER_ELEMENT;
+           const dataPtr = Module._malloc(numBytes);
+           const dataOnHeap = new Uint8Array(Module.HEAPU8.buffer, dataPtr, numBytes);
+           dataOnHeap.set(uint8ArrData);
+
+           // calling the Wasm function
+        //    const res = Module._myWasmFunc(dataOnHeap.byteOffset, uint8ArrData.length);
+            return {
+                pointer: dataOnHeap.byteOffset,
+                length: uint8ArrData.length
+            }
+        }
         function main(Module) {
             const video = document.querySelector('#video0')
             const proxycanvas = document.querySelector('#proxy-canvas')
             const proxycontext = proxycanvas.getContext('2d')
-            
+            let manager
+            let inited
             console.log('MppGraphManager',Module.MppGraphManager)
             video.addEventListener('canplay', () => {
                 const {videoWidth, videoHeight} = video
@@ -52,18 +67,39 @@
                 proxycanvas.style.height = videoHeight
                 proxycanvas.width = videoWidth
                 proxycanvas.height = videoHeight
-
-
-                const manager = new Module.MppGraphManager()
-
+              if (!inited) {
+                inited = true
+                if (!manager) {
+                    manager = new Module.MppGraphManager(540, 960)
+                    
+                    console.log("manager",manager,videoWidth)
+                    // manager.SetSize(videoWidth, videoHeight)
+                    const result = manager.Initialize()
+                    console.log('init', result)
+                    // let i = manager.Test()
+                    // console.log('i',i)
+                }
+                
                 const draw = () => {
                     proxycontext.clearRect(0,0, videoWidth, videoHeight)
                     proxycontext.drawImage(video, 0, 0,videoWidth,videoHeight)
                     const imagedata = proxycontext.getImageData(0,0, videoWidth,videoHeight)
+
+                    if(imgPointer) {
+                        Module._free(imgPointer)
+                    }
+                    const rawDataSize = 4 * imagedata.width * imagedata.height;
+                    imgPointer = Module._malloc(rawDataSize)
+                    Module.HEAPU8.set(imagedata.data, imgPointer);
+
                     // console.log('imagedata',imagedata)
-                    requestAnimationFrame(draw)
+                    manager.Send(imgPointer, rawDataSize)
+                    // requestAnimationFrame(draw)
                 }
                 requestAnimationFrame(draw)
+
+              }
+                
             })
             video.play()
             

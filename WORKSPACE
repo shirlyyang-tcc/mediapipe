@@ -3,19 +3,7 @@ workspace(name = "mediapipe")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-#emsdk configure
-http_archive(
-    name = "emsdk",
-    sha256 = "22b3a59360a7985c2e282adfc410c779cc103d132c1c1963e95ef643b9111009",
-    strip_prefix = "emsdk-0.0.4/bazel",
-    url = "https://github.com/shirlyyang-tcc/emsdk/archive/refs/tags/0.0.4.tar.gz",
-)
 
-load("@emsdk//:deps.bzl", emsdk_deps = "deps")
-emsdk_deps()
-
-load("@emsdk//:emscripten_deps.bzl", emsdk_emscripten_deps = "emscripten_deps")
-emsdk_emscripten_deps(emscripten_version = "3.1.21")
 
 
 # Protobuf expects an //external:python_headers target
@@ -509,3 +497,17 @@ cc_crosstool(name = "crosstool")
 
 load("//third_party:external_files.bzl", "external_files")
 external_files()
+
+#emsdk configure
+http_archive(
+    name = "emsdk",
+    sha256 = "22b3a59360a7985c2e282adfc410c779cc103d132c1c1963e95ef643b9111009",
+    strip_prefix = "emsdk-0.0.4/bazel",
+    url = "https://github.com/shirlyyang-tcc/emsdk/archive/refs/tags/0.0.4.tar.gz",
+)
+
+load("@emsdk//:deps.bzl", emsdk_deps = "deps")
+emsdk_deps()
+
+load("@emsdk//:emscripten_deps.bzl", emsdk_emscripten_deps = "emscripten_deps")
+emsdk_emscripten_deps(emscripten_version = "3.1.21")

@@ -26,6 +26,7 @@ cc_library(
         #"include/arm-linux-gnueabihf/opencv4/",
         #"include/x86_64-linux-gnu/opencv4/",
         #"include/opencv4/",
+        "include/"
     ],
     linkopts = [
         "-L/usr/local/lib",

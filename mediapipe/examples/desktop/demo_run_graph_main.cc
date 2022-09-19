@@ -107,6 +107,10 @@ absl::Status RunMPPGraph() {
   LOG(INFO) << "Start running the calculator graph.";
 
   MP_RETURN_IF_ERROR(graph.StartRun({
+    // side_packet
+    {
+      "with_attention", mediapipe::MakePacket<bool>(true)
+    }
   }));
 
   LOG(INFO) << "Put roi into graph";
@@ -164,6 +168,7 @@ absl::Status RunMPPGraph() {
     MP_RETURN_IF_ERROR(graph.AddPacketToInputStream(
     "roi", mediapipe::MakePacket<mediapipe::NormalizedRect>(GetTestRoi())
                .At(mediapipe::Timestamp(frame_timestamp_us))));
+
     LOG(INFO) << "sent frame";
     
 
@@ -176,9 +181,9 @@ absl::Status RunMPPGraph() {
       break;
     }
     auto& output = packet.Get<mediapipe::NormalizedLandmarkList>();
-    for (int i = 0; i < 468; i++) {
+    for (int i = 0; i < 478; i++) {
       mediapipe::NormalizedLandmark landmark = output.landmark(i);
-      LOG(INFO) << "landmark x" << landmark.x();
+      LOG(INFO) << "landmark x " << i << ":" << landmark.x();
     }
     LOG(INFO) << "poller next||||||";
    

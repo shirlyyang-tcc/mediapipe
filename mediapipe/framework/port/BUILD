@@ -16,6 +16,7 @@
 #  Port of various libraries and utilities.
 
 licenses(["notice"])
+load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
 
 package(
     default_visibility = ["//visibility:private"],
@@ -248,7 +249,15 @@ cc_library(
     deps = [
         "//third_party:opencv",
     ],
+    
 )
+
+
+wasm_cc_binary(
+    name = "opencv_core_wasm",
+    cc_target = ":opencv_core"
+)
+
 
 cc_library(
     name = "opencv_imgproc",

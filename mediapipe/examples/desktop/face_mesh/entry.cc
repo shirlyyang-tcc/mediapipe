@@ -157,10 +157,10 @@ EMSCRIPTEN_BINDINGS(face_mesh) {
     .property("x", &Landmark::x)
     .property("y", &Landmark::y)
     .property("z", &Landmark::z);
-  // emscripten::class_<MppGraphManager>("MppGraphManager")
-  //   .constructor()
-  //   .function("Initialize", &MppGraphManager::Initialize)
-  //   .function("Send", &MppGraphManager::Send, emscripten::allow_raw_pointers());
+  emscripten::class_<MppGraphManager>("MppGraphManager")
+    // .constructor()
+    .function("Initialize", &MppGraphManager::Initialize)
+    .function("Send", &MppGraphManager::Send, emscripten::allow_raw_pointers());
 
   
   emscripten::register_vector<Landmark>("VectorLandmark>");

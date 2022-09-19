@@ -48,7 +48,7 @@ class MppGraphManager {
       return true;
     };
     Landmark * list;
-    int Send(uint8_t* buffer, size_t nSize);
+    absl::Status Send(uintptr_t buffer, int nSize);
     Landmark * GetLandmarkList();
     int runCounter = 0;
     int width = 540;
@@ -117,9 +117,9 @@ absl::Status MppGraphManager::Initialize() {
   return graph.WaitUntilDone();
 };
 // 返回LandMark数组
-int MppGraphManager::Send(uint8_t* buffer, size_t nSize) {
+absl::Status MppGraphManager::Send(uintptr_t buffer, int nSize) {
   uint8_t* data;
-  uint8_t* imgPtr = buffer;
+  uint8_t* imgPtr = reinterpret_cast<uint8*>(buffer);
   for (int ptr = 0; ptr < nSize; ptr += 4) {
     // rgba
     data[ptr] = *imgPtr;
@@ -149,7 +149,7 @@ int MppGraphManager::Send(uint8_t* buffer, size_t nSize) {
   LOG(INFO) << "sent frame";
   LOG(INFO) << "Shutting down.";
   graph.CloseInputStream(kInputStream);
-  return 1;
+  return absl::OkStatus();
   // // 获取输出
   // mediapipe::Packet packet;
   // Landmark list[468];

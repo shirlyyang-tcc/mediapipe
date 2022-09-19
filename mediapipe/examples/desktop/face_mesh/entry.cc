@@ -18,7 +18,9 @@
 #include "mediapipe/framework/port/logging.h"
 #include "mediapipe/framework/port/status.h"
 #include "mediapipe/framework/formats/landmark.pb.h"
+#include <emscripten.h>
 #include <emscripten/bind.h>
+#include <emscripten/val.h>
 
 constexpr char kInputStream[] = "image";
 constexpr char kOutputStream[] = "face_landmarks";
@@ -33,7 +35,10 @@ class Landmark {
   }
   Landmark() {}
 };
-
+// js function
+EM_JS(void, on_result_callback, (Landmark* list), {
+  jsOnResultCallback(list);
+});
 class MppGraphManager {
   public:
     mediapipe::CalculatorGraph graph;
@@ -102,6 +107,7 @@ absl::Status MppGraphManager::Initialize() {
       list[i].y = landmark.y();
       list[i].z = landmark.z();
       LOG(INFO) << "landmark x" << i << ":" << list[i].z;
+      on_result_callback(list);
     }
     
     return absl::OkStatus();

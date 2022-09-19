@@ -1369,7 +1369,7 @@ var tempI64;
 var ASM_CONSTS = {
   
 };
-
+function on_result_callback(list) { jsOnResultCallback(list); }
 
 
 
@@ -6939,6 +6939,7 @@ var asmLibraryArg = {
   "fd_read": _fd_read,
   "fd_seek": _fd_seek,
   "fd_write": _fd_write,
+  "on_result_callback": on_result_callback,
   "strftime": _strftime,
   "strftime_l": _strftime_l
 };
@@ -7035,7 +7036,8 @@ var dynCall_iiiiijj = Module["dynCall_iiiiijj"] = createExportWrapper("dynCall_i
 /** @type {function(...*):?} */
 var dynCall_iiiiiijj = Module["dynCall_iiiiiijj"] = createExportWrapper("dynCall_iiiiiijj");
 
-
+var ___start_em_js = Module['___start_em_js'] = 229428;
+var ___stop_em_js = Module['___stop_em_js'] = 229478;
 
 
 

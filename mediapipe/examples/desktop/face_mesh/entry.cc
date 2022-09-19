@@ -92,6 +92,7 @@ absl::Status MppGraphManager::Initialize() {
      mediapipe::ParseTextProtoOrDie<mediapipe::CalculatorGraphConfig>(
          calculator_graph_config_contents);
   LOG(INFO) << "Initialize the calculator graph.";
+  LOG(INFO) << calculator_graph_config_contents;
   MP_RETURN_IF_ERROR(graph.Initialize(config));
 
   // ASSIGN_OR_RETURN(poller, graph.AddOutputStreamPoller(kOutputStream));

@@ -7036,8 +7036,8 @@ var dynCall_iiiiijj = Module["dynCall_iiiiijj"] = createExportWrapper("dynCall_i
 /** @type {function(...*):?} */
 var dynCall_iiiiiijj = Module["dynCall_iiiiiijj"] = createExportWrapper("dynCall_iiiiiijj");
 
-var ___start_em_js = Module['___start_em_js'] = 229428;
-var ___stop_em_js = Module['___stop_em_js'] = 229478;
+var ___start_em_js = Module['___start_em_js'] = 229364;
+var ___stop_em_js = Module['___stop_em_js'] = 229414;
 
 
 

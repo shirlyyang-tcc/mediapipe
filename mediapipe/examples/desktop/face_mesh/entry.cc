@@ -39,8 +39,8 @@ class MppGraphManager {
     mediapipe::CalculatorGraph graph;
     // mediapipe::OutputStreamPoller poller;
     absl::Status Initialize();
-    absl::Status Test() {
-      return absl::OkStatus();
+    int Test() {
+      return 1;
     };
     absl::Status SetSize(int pwidth, int pheight) {
       width = pwidth;

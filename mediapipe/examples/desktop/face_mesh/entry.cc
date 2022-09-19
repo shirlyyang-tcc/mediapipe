@@ -39,6 +39,9 @@ class MppGraphManager {
     mediapipe::CalculatorGraph graph;
     // mediapipe::OutputStreamPoller poller;
     absl::Status Initialize();
+    absl::Status Test() {
+      return absl::OkStatus();
+    };
     absl::Status SetSize(int pwidth, int pheight) {
       width = pwidth;
       height = pheight;
@@ -178,8 +181,9 @@ EMSCRIPTEN_BINDINGS(face_mesh) {
   emscripten::class_<MppGraphManager>("MppGraphManager")
     .constructor()
     .constructor<int,int>()
+    .function("Test", &MppGraphManager::Test);
     // .function("SetSize", &MppGraphManager::SetSize)
-    .function("Initialize", &MppGraphManager::Initialize);
+    // .function("Initialize", &MppGraphManager::Initialize);
     // .function("Send", &MppGraphManager::Send, emscripten::allow_raw_pointers())
     // .function("GetLandmarkList", &MppGraphManager::GetLandmarkList, emscripten::allow_raw_pointers());
 

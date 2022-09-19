@@ -53,6 +53,9 @@
                 length: uint8ArrData.length
             }
         }
+        function jsOnResultCallback(list) {
+            console.log('jsOnResultCallback', list)
+        }
         function main(Module) {
             const video = document.querySelector('#video0')
             const proxycanvas = document.querySelector('#proxy-canvas')
@@ -93,8 +96,9 @@
                     Module.HEAPU8.set(imagedata.data, imgPointer);
 
                     // console.log('imagedata',imagedata)
-                    manager.Send(imgPointer, rawDataSize)
+                    // manager.Send(imgPointer, rawDataSize)
                     // requestAnimationFrame(draw)
+
                 }
                 requestAnimationFrame(draw)
 

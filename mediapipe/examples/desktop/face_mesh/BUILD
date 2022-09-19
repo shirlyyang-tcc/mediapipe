@@ -45,6 +45,7 @@ cc_binary(
     name = "my_face_mesh_cpu",
     srcs = ["entry.cc"],
     visibility = ["//visibility:public"],
+    features = ["emcc_debug_link"],
     data = [
         "//mediapipe/modules/face_landmark:face_landmark_with_attention.tflite",
         "//mediapipe/modules/face_landmark:face_landmark.tflite",

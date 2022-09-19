@@ -177,11 +177,11 @@ Landmark* MppGraphManager::GetLandmarkList() {
 EMSCRIPTEN_BINDINGS(face_mesh) {
   emscripten::class_<MppGraphManager>("MppGraphManager")
     .constructor()
-    .constructor<int, int>()
-    .function("SetSize", &MppGraphManager::SetSize)
-    .function("Initialize", &MppGraphManager::Initialize)
-    .function("Send", &MppGraphManager::Send, emscripten::allow_raw_pointers())
-    .function("GetLandmarkList", &MppGraphManager::GetLandmarkList, emscripten::allow_raw_pointers());
+    .constructor<int,int>()
+    // .function("SetSize", &MppGraphManager::SetSize)
+    .function("Initialize", &MppGraphManager::Initialize);
+    // .function("Send", &MppGraphManager::Send, emscripten::allow_raw_pointers())
+    // .function("GetLandmarkList", &MppGraphManager::GetLandmarkList, emscripten::allow_raw_pointers());
 
   emscripten::class_<Landmark>("Landmark")
     .property("x", &Landmark::x)

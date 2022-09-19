@@ -118,6 +118,7 @@ absl::Status MppGraphManager::Initialize() {
 };
 // 返回LandMark数组
 absl::Status MppGraphManager::Send(uintptr_t buffer, int nSize) {
+  LOG(INFO) << "detect start";
   uint8_t* data;
   uint8_t* imgPtr = reinterpret_cast<uint8*>(buffer);
   for (int ptr = 0; ptr < nSize; ptr += 4) {
@@ -131,12 +132,13 @@ absl::Status MppGraphManager::Send(uintptr_t buffer, int nSize) {
     data[ptr + 3] = *imgPtr;
     imgPtr ++;
   }
+  LOG(INFO) << "detect getImageFrame start";
   auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
         mediapipe::ImageFormat::SRGBA, width, height,
         mediapipe::ImageFrame::kDefaultAlignmentBoundary);
   int img_data_size = 640 * 480 * 4;
   std::memcpy(input_frame->MutablePixelData(), data, img_data_size);
-
+  LOG(INFO) << "detect getImageFrame send";
   size_t frame_timestamp_us =
     runCounter * 1e6;
   runCounter ++;
@@ -150,28 +152,7 @@ absl::Status MppGraphManager::Send(uintptr_t buffer, int nSize) {
   LOG(INFO) << "Shutting down.";
   graph.CloseInputStream(kInputStream);
   return absl::OkStatus();
-  // // 获取输出
-  // mediapipe::Packet packet;
-  // Landmark list[468];
-
-  // // // LOG(INFO) << "poller 000";
-  // // if (!poller.Next(&packet)) {
-  // //   LOG(INFO) << "poller break|||||";
-  // //   return list;
-  // // }
-  // // LOG(INFO) << "poller get result";
-
-  // auto& faces = packet.Get<mediapipe::NormalizedLandmarkList>();
-  // for (int i = 0; i < 468; i++) {
-  //   mediapipe::NormalizedLandmark landmark = faces.landmark(i);
-  //   list[i].x = landmark.x();
-  //   list[i].y = landmark.y();
-  //   list[i].z = landmark.z();
-  //   LOG(INFO) << "landmark x" << list[i].z;
-  // }
-
-  // 返回结果
-  // return list;
+  
 };
 Landmark* MppGraphManager::GetLandmarkList() {
   return list;

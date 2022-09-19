@@ -44,7 +44,6 @@ Module['ready'] = new Promise(function(resolve, reject) {
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// ++++platfrom.machine aarch64
 
   if (!Module.expectedDataFileDownloads) {
     Module.expectedDataFileDownloads = 0;

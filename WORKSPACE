@@ -501,9 +501,9 @@ external_files()
 #emsdk configure
 http_archive(
     name = "emsdk",
-    sha256 = "22b3a59360a7985c2e282adfc410c779cc103d132c1c1963e95ef643b9111009",
-    strip_prefix = "emsdk-0.0.4/bazel",
-    url = "https://github.com/shirlyyang-tcc/emsdk/archive/refs/tags/0.0.4.tar.gz",
+    sha256 = "e9895c4d68553ee650d61a958ef8a531a03b339d9f51569e5ec399a0eeae61c1",
+    strip_prefix = "emsdk-0.0.5/bazel",
+    url = "https://github.com/shirlyyang-tcc/emsdk/archive/refs/tags/0.0.5.tar.gz",
 )
 
 load("@emsdk//:deps.bzl", emsdk_deps = "deps")

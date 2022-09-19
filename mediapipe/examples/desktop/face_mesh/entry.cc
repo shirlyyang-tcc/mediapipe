@@ -36,15 +36,23 @@ class Landmark {
 
 class MppGraphManager {
   public:
-    // MppGraphManager() {};
     mediapipe::CalculatorGraph graph;
-    mediapipe::OutputStreamPoller poller;
+    // mediapipe::OutputStreamPoller poller;
     absl::Status Initialize();
     absl::Status SetSize(int width, int height);
-    Landmark * Send(uint8_t* buffer, size_t nSize);
+    Landmark * list;
+    absl::Status Send(uint8_t* buffer, size_t nSize);
+    Landmark * GetLandmarkList();
     int runCounter = 0;
     int width = 640;
     int height = 480;
+    MppGraphManager() {
+    };
+    MppGraphManager(int pwidth, int pheight) {
+      width = pwidth;
+      height = pheight;
+      
+    };
 };
 
 mediapipe::NormalizedRect GetTestRoi() {
@@ -73,7 +81,25 @@ absl::Status MppGraphManager::Initialize() {
          calculator_graph_config_contents);
   LOG(INFO) << "Initialize the calculator graph.";
   MP_RETURN_IF_ERROR(graph.Initialize(config));
-  ASSIGN_OR_RETURN(poller, graph.AddOutputStreamPoller(kOutputStream));
+
+  // ASSIGN_OR_RETURN(poller, graph.AddOutputStreamPoller(kOutputStream));
+  
+  graph.ObserveOutputStream(kOutputStream, [&](const mediapipe::Packet& packet) {
+    // 获取输出
+    list = new Landmark[478];
+
+    auto& faces = packet.Get<mediapipe::NormalizedLandmarkList>();
+    for (int i = 0; i < 478; i++) {
+      mediapipe::NormalizedLandmark landmark = faces.landmark(i);
+      list[i].x = landmark.x();
+      list[i].y = landmark.y();
+      list[i].z = landmark.z();
+      LOG(INFO) << "landmark x" << i << ":" << list[i].z;
+    }
+    
+    return absl::OkStatus();
+
+  });
   LOG(INFO) << "Start running the calculator graph.";
 
   MP_RETURN_IF_ERROR(graph.StartRun({
@@ -84,7 +110,7 @@ absl::Status MppGraphManager::Initialize() {
   return graph.WaitUntilDone();
 };
 // 返回LandMark数组
-Landmark * MppGraphManager::Send(uint8_t* buffer, size_t nSize) {
+absl::Status MppGraphManager::Send(uint8_t* buffer, size_t nSize) {
 //   cv::Mat raw_data = cv::Mat(1, nSize, CV_8UC1, buffer);
 //   cv::Mat camera_frame_raw = cv::imdecode(raw_data, cv::IMREAD_GRAYSCALE);
 //   cv::Mat camera_frame;
@@ -127,29 +153,33 @@ Landmark * MppGraphManager::Send(uint8_t* buffer, size_t nSize) {
   LOG(INFO) << "sent frame";
   LOG(INFO) << "Shutting down.";
   graph.CloseInputStream(kInputStream);
-  // 获取输出
-  mediapipe::Packet packet;
-  Landmark list[468];
+  return absl::OkStatus();
+  // // 获取输出
+  // mediapipe::Packet packet;
+  // Landmark list[468];
 
-  // LOG(INFO) << "poller 000";
-  if (!poller.Next(&packet)) {
-    LOG(INFO) << "poller break|||||";
-    return list;
-  }
-  LOG(INFO) << "poller get result";
+  // // // LOG(INFO) << "poller 000";
+  // // if (!poller.Next(&packet)) {
+  // //   LOG(INFO) << "poller break|||||";
+  // //   return list;
+  // // }
+  // // LOG(INFO) << "poller get result";
 
-  auto& faces = packet.Get<mediapipe::NormalizedLandmarkList>();
-  for (int i = 0; i < 468; i++) {
-    mediapipe::NormalizedLandmark landmark = faces.landmark(i);
-    list[i].x = landmark.x();
-    list[i].y = landmark.y();
-    list[i].z = landmark.z();
-    LOG(INFO) << "landmark x" << list[i].z;
-  }
+  // auto& faces = packet.Get<mediapipe::NormalizedLandmarkList>();
+  // for (int i = 0; i < 468; i++) {
+  //   mediapipe::NormalizedLandmark landmark = faces.landmark(i);
+  //   list[i].x = landmark.x();
+  //   list[i].y = landmark.y();
+  //   list[i].z = landmark.z();
+  //   LOG(INFO) << "landmark x" << list[i].z;
+  // }
 
   // 返回结果
-  return list;
+  // return list;
 };
+Landmark* MppGraphManager::GetLandmarkList() {
+  return list;
+}
 
 
 EMSCRIPTEN_BINDINGS(face_mesh) {
@@ -158,9 +188,10 @@ EMSCRIPTEN_BINDINGS(face_mesh) {
     .property("y", &Landmark::y)
     .property("z", &Landmark::z);
   emscripten::class_<MppGraphManager>("MppGraphManager")
-    // .constructor()
+    .constructor()
     .function("Initialize", &MppGraphManager::Initialize)
-    .function("Send", &MppGraphManager::Send, emscripten::allow_raw_pointers());
+    .function("Send", &MppGraphManager::Send, emscripten::allow_raw_pointers())
+    .function("GetLandmarkList", &MppGraphManager::GetLandmarkList, emscripten::allow_raw_pointers());
 
   
   emscripten::register_vector<Landmark>("VectorLandmark>");

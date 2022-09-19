@@ -42,12 +42,13 @@ class MppGraphManager {
     int Test() {
       return 1;
     };
-    absl::Status SetSize(int pwidth, int pheight) {
+    bool SetSize(int pwidth, int pheight) {
       width = pwidth;
       height = pheight;
+      return true;
     };
     Landmark * list;
-    absl::Status Send(uint8_t* buffer, size_t nSize);
+    int Send(uint8_t* buffer, size_t nSize);
     Landmark * GetLandmarkList();
     int runCounter = 0;
     int width = 540;
@@ -116,7 +117,7 @@ absl::Status MppGraphManager::Initialize() {
   return graph.WaitUntilDone();
 };
 // 返回LandMark数组
-absl::Status MppGraphManager::Send(uint8_t* buffer, size_t nSize) {
+int MppGraphManager::Send(uint8_t* buffer, size_t nSize) {
   uint8_t* data;
   uint8_t* imgPtr = buffer;
   for (int ptr = 0; ptr < nSize; ptr += 4) {
@@ -148,7 +149,7 @@ absl::Status MppGraphManager::Send(uint8_t* buffer, size_t nSize) {
   LOG(INFO) << "sent frame";
   LOG(INFO) << "Shutting down.";
   graph.CloseInputStream(kInputStream);
-  return absl::OkStatus();
+  return 1;
   // // 获取输出
   // mediapipe::Packet packet;
   // Landmark list[468];
@@ -186,7 +187,7 @@ EMSCRIPTEN_BINDINGS(face_mesh) {
     // .function("Initialize", &MppGraphManager::Initialize);
     // .function("Send", &MppGraphManager::Send, emscripten::allow_raw_pointers())
     // .function("GetLandmarkList", &MppGraphManager::GetLandmarkList, emscripten::allow_raw_pointers());
-
+  emscripten::class_<absl::Status>("AbslStatus");
   emscripten::class_<Landmark>("Landmark")
     .property("x", &Landmark::x)
     .property("y", &Landmark::y)

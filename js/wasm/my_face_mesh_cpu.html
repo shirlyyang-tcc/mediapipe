@@ -16,8 +16,7 @@
         </div>
         <!--play source video-->
         <video 
-        id="video0" 
-        autoplay 
+        id="video0"  
         muted
         loop
         crossorigin="anonymous"
@@ -28,31 +27,53 @@
         <canvas id="result-canvas"></canvas>
     </body>
     <script>
-        console.log('Module',Module)
-        function main() {
+        async function initDetector() {
+            return new Promise((resolve, rejct) => {
+                const init = new Module()
+                init.then((a) => {
+                    // console.log('???', a)
+                    resolve(a)
+                })
+                console.log('init',init)
+            })
+
+        }
+        
+        function main(Module) {
             const video = document.querySelector('#video0')
             const proxycanvas = document.querySelector('#proxy-canvas')
             const proxycontext = proxycanvas.getContext('2d')
             
-            video.addEventListener('play', () => {
+            console.log('MppGraphManager',Module.MppGraphManager)
+            video.addEventListener('canplay', () => {
                 const {videoWidth, videoHeight} = video
+                // console.log('}}}',videoWidth, videoHeight)
                 proxycanvas.style.width = videoWidth
                 proxycanvas.style.height = videoHeight
                 proxycanvas.width = videoWidth
                 proxycanvas.height = videoHeight
 
+
+                const manager = new Module.MppGraphManager()
+
                 const draw = () => {
                     proxycontext.clearRect(0,0, videoWidth, videoHeight)
-                    proxycontext.drawImage(video, 0, 0)
+                    proxycontext.drawImage(video, 0, 0,videoWidth,videoHeight)
                     const imagedata = proxycontext.getImageData(0,0, videoWidth,videoHeight)
                     // console.log('imagedata',imagedata)
                     requestAnimationFrame(draw)
                 }
                 requestAnimationFrame(draw)
             })
-
+            video.play()
             
         }
-        main()
+        // setTimeout(() => {
+        initDetector().then(Module => {
+            console.log('+++', Module)
+            main(Module)
+
+        })
+        // }, 1000)
     </script>
 </html>

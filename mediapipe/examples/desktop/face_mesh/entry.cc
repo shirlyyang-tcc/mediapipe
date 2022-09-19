@@ -47,8 +47,8 @@ class MppGraphManager {
     absl::Status Send(uint8_t* buffer, size_t nSize);
     Landmark * GetLandmarkList();
     int runCounter = 0;
-    int width = 640;
-    int height = 480;
+    int width = 540;
+    int height = 960;
     MppGraphManager() {
     };
     MppGraphManager(int pwidth, int pheight) {

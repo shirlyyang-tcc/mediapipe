@@ -91,6 +91,7 @@ absl::Status ProcessImage(std::unique_ptr<mediapipe::CalculatorGraph> graph) {
     return absl::UnknownError(
         "Failed to get packet from output stream 'right_iris_depth_mm'.");
   }
+  
   const auto& right_iris_depth_mm = right_iris_depth_packet.Get<float>();
   const int right_iris_depth_cm = std::round(right_iris_depth_mm / 10);
   std::cout << "Right Iris Depth: " << right_iris_depth_cm << " cm."

@@ -114,17 +114,6 @@ absl::Status MppGraphManager::Initialize() {
 };
 // 返回LandMark数组
 absl::Status MppGraphManager::Send(uint8_t* buffer, size_t nSize) {
-//   cv::Mat raw_data = cv::Mat(1, nSize, CV_8UC1, buffer);
-//   cv::Mat camera_frame_raw = cv::imdecode(raw_data, cv::IMREAD_GRAYSCALE);
-//   cv::Mat camera_frame;
-//   // opencv使用的是bgr空间
-//   cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGB);
-//   auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
-//         mediapipe::ImageFormat::SRGB, camera_frame.cols, camera_frame.rows,
-//         mediapipe::ImageFrame::kDefaultAlignmentBoundary);
-//   cv::Mat input_frame_mat = mediapipe::formats::MatView(input_frame.get());
-//   // 画面输入到packet中
-//   camera_frame.copyTo(input_frame_mat);
   uint8_t* data;
   uint8_t* imgPtr = buffer;
   for (int ptr = 0; ptr < nSize; ptr += 4) {
@@ -186,17 +175,19 @@ Landmark* MppGraphManager::GetLandmarkList() {
 
 
 EMSCRIPTEN_BINDINGS(face_mesh) {
-  emscripten::class_<Landmark>("Landmark")
-    .property("x", &Landmark::x)
-    .property("y", &Landmark::y)
-    .property("z", &Landmark::z);
   emscripten::class_<MppGraphManager>("MppGraphManager")
     .constructor()
+    .constructor<int, int>()
     .function("SetSize", &MppGraphManager::SetSize)
     .function("Initialize", &MppGraphManager::Initialize)
     .function("Send", &MppGraphManager::Send, emscripten::allow_raw_pointers())
     .function("GetLandmarkList", &MppGraphManager::GetLandmarkList, emscripten::allow_raw_pointers());
 
+  emscripten::class_<Landmark>("Landmark")
+    .property("x", &Landmark::x)
+    .property("y", &Landmark::y)
+    .property("z", &Landmark::z);
+  
   
   emscripten::register_vector<Landmark>("VectorLandmark>");
 }

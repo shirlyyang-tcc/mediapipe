@@ -97,6 +97,7 @@ absl::Status MppGraphManager::Initialize() {
   // ASSIGN_OR_RETURN(poller, graph.AddOutputStreamPoller(kOutputStream));
   
   graph.ObserveOutputStream(kOutputStream, [&](const mediapipe::Packet& packet) {
+    LOG(INFO) << "get output";
     // 获取输出
     list = new Landmark[478];
 
@@ -124,7 +125,7 @@ absl::Status MppGraphManager::Initialize() {
 };
 // 返回LandMark数组
 absl::Status MppGraphManager::Send(uintptr_t buffer, int nSize) {
-  LOG(INFO) << "detect start";
+  LOG(INFO) << "detect start width " << width << ", height " << height;
   uint8_t* data = (uint8*)malloc(4 * width * height);
   uint8_t* imgPtr = reinterpret_cast<uint8*>(buffer);
   LOG(INFO) << "detect start nSize" << nSize;
@@ -143,11 +144,10 @@ absl::Status MppGraphManager::Send(uintptr_t buffer, int nSize) {
   auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
         mediapipe::ImageFormat::SRGBA, width, height,
         mediapipe::ImageFrame::kDefaultAlignmentBoundary);
-  int img_data_size = 640 * 480 * 4;
+  int img_data_size = width * height * 4;
   std::memcpy(input_frame->MutablePixelData(), data, img_data_size);
   LOG(INFO) << "detect getImageFrame send";
-  size_t frame_timestamp_us =
-    runCounter * 1e6;
+  size_t frame_timestamp_us = runCounter * 1e6;
   runCounter ++;
   graph.AddPacketToInputStream(
       kInputStream, mediapipe::Adopt(input_frame.release())
@@ -156,8 +156,8 @@ absl::Status MppGraphManager::Send(uintptr_t buffer, int nSize) {
     "roi", MakePacket<mediapipe::NormalizedRect>(GetTestRoi())
                .At(mediapipe::Timestamp(frame_timestamp_us)));
   LOG(INFO) << "sent frame";
-  LOG(INFO) << "Shutting down.";
-  graph.CloseInputStream(kInputStream);
+  // LOG(INFO) << "Shutting down.";
+  // graph.CloseInputStream(kInputStream);
   return absl::OkStatus();
   
 };

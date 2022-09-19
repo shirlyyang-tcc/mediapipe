@@ -126,26 +126,26 @@ absl::Status MppGraphManager::Initialize() {
 // 返回LandMark数组
 absl::Status MppGraphManager::Send(uintptr_t buffer, int nSize) {
   LOG(INFO) << "detect start width " << width << ", height " << height;
-  uint8_t* data = (uint8*)malloc(4 * width * height);
-  uint8_t* imgPtr = reinterpret_cast<uint8*>(buffer);
+  // uint8_t* data = (uint8*)malloc(4 * width * height);
+  uint8_t* imgPtr = reinterpret_cast<uint8_t*>(buffer);
   LOG(INFO) << "detect start nSize" << nSize;
-  for (int ptr = 0; ptr < nSize; ptr += 4) {
-    // rgba
-    data[ptr] = *imgPtr;
-    imgPtr ++;
-    data[ptr + 1] = *imgPtr;
-    imgPtr ++;
-    data[ptr + 2] = *imgPtr; //(255*w) / 500;
-    imgPtr ++;
-    data[ptr + 3] = *imgPtr;
-    imgPtr ++;
-  }
+  // for (int ptr = 0; ptr < nSize; ptr += 4) {
+  //   // rgba
+  //   data[ptr] = *imgPtr;
+  //   imgPtr ++;
+  //   data[ptr + 1] = *imgPtr;
+  //   imgPtr ++;
+  //   data[ptr + 2] = *imgPtr; //(255*w) / 500;
+  //   imgPtr ++;
+  //   data[ptr + 3] = *imgPtr;
+  //   imgPtr ++;
+  // }
   LOG(INFO) << "detect getImageFrame start";
   auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
         mediapipe::ImageFormat::SRGBA, width, height,
         mediapipe::ImageFrame::kDefaultAlignmentBoundary);
   int img_data_size = width * height * 4;
-  std::memcpy(input_frame->MutablePixelData(), data, img_data_size);
+  std::memcpy(input_frame->MutablePixelData(), imgPtr, img_data_size);
   LOG(INFO) << "detect getImageFrame send";
   size_t frame_timestamp_us = runCounter * 1e6;
   runCounter ++;

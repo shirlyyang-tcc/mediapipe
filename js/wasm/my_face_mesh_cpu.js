@@ -153,7 +153,7 @@ var REMOTE_PACKAGE_SIZE = metadata['remote_package_size'];
       }
 Module['FS_createPath']("/", "mediapipe", true, true);
 Module['FS_createPath']("/mediapipe", "modules", true, true);
-Module['FS_createPath']("/mediapipe/modules", "face_detection", true, true);
+Module['FS_createPath']("/mediapipe/modules", "face_landmark", true, true);
 
       /** @constructor */
       function DataRequest(start, end, audio) {
@@ -221,7 +221,7 @@ Module['FS_createPath']("/mediapipe/modules", "face_detection", true, true);
     }
 
     }
-    loadPackage({"files": [{"filename": "/face_landmark_cpu.pbtxt", "start": 0, "end": 5760}, {"filename": "/mediapipe/modules/face_detection/face_detection.tflite", "start": 5760, "end": 1247656}, {"filename": "/mediapipe/modules/face_detection/face_landmark_with_attention.tflite", "start": 1247656, "end": 3743608}], "remote_package_size": 3743608});
+    loadPackage({"files": [{"filename": "/face_landmark_cpu.pbtxt", "start": 0, "end": 5760}, {"filename": "/mediapipe/modules/face_landmark/face_landmark.tflite", "start": 5760, "end": 1247656}, {"filename": "/mediapipe/modules/face_landmark/face_landmark_with_attention.tflite", "start": 1247656, "end": 3743608}], "remote_package_size": 3743608});
 
   })();
 

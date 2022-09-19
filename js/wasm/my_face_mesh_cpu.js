@@ -151,6 +151,9 @@ var REMOTE_PACKAGE_SIZE = metadata['remote_package_size'];
       function assert(check, msg) {
         if (!check) throw msg + new Error().stack;
       }
+Module['FS_createPath']("/", "mediapipe", true, true);
+Module['FS_createPath']("/mediapipe", "modules", true, true);
+Module['FS_createPath']("/mediapipe/modules", "face_detection", true, true);
 
       /** @constructor */
       function DataRequest(start, end, audio) {
@@ -218,7 +221,7 @@ var REMOTE_PACKAGE_SIZE = metadata['remote_package_size'];
     }
 
     }
-    loadPackage({"files": [{"filename": "/face_landmark_cpu.pbtxt", "start": 0, "end": 5760}], "remote_package_size": 5760});
+    loadPackage({"files": [{"filename": "/face_landmark_cpu.pbtxt", "start": 0, "end": 5760}, {"filename": "/mediapipe/modules/face_detection/face_detection.tflite", "start": 5760, "end": 1247656}, {"filename": "/mediapipe/modules/face_detection/face_landmark_with_attention.tflite", "start": 1247656, "end": 3743608}], "remote_package_size": 3743608});
 
   })();
 

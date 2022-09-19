@@ -119,8 +119,9 @@ absl::Status MppGraphManager::Initialize() {
 // 返回LandMark数组
 absl::Status MppGraphManager::Send(uintptr_t buffer, int nSize) {
   LOG(INFO) << "detect start";
-  uint8_t* data;
+  uint8_t* data = (uint8*)malloc(4 * width * height);
   uint8_t* imgPtr = reinterpret_cast<uint8*>(buffer);
+  LOG(INFO) << "detect start nSize" << nSize;
   for (int ptr = 0; ptr < nSize; ptr += 4) {
     // rgba
     data[ptr] = *imgPtr;

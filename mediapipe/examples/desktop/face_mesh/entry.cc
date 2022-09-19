@@ -127,7 +127,7 @@ absl::Status MppGraphManager::Initialize() {
 absl::Status MppGraphManager::Send(uintptr_t buffer, int nSize) {
   LOG(INFO) << "detect start width " << width << ", height " << height;
   // uint8_t* data = (uint8*)malloc(4 * width * height);
-  uint8_t* imgPtr = reinterpret_cast<uint8_t*>(buffer);
+  uint8* imgPtr = reinterpret_cast<uint8*>(buffer);
   LOG(INFO) << "detect start nSize" << nSize;
   // for (int ptr = 0; ptr < nSize; ptr += 4) {
   //   // rgba
@@ -143,9 +143,16 @@ absl::Status MppGraphManager::Send(uintptr_t buffer, int nSize) {
   LOG(INFO) << "detect getImageFrame start";
   auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
         mediapipe::ImageFormat::SRGBA, width, height,
-        mediapipe::ImageFrame::kDefaultAlignmentBoundary);
+        mediapipe::ImageFrame::kDefaultAlignmentBoundary
+  );
   int img_data_size = width * height * 4;
-  std::memcpy(input_frame->MutablePixelData(), imgPtr, img_data_size);
+  // std::memcpy(input_frame->MutablePixelData(), imgPtr, img_data_size);
+  input_frame->CopyPixelData(
+    mediapipe::ImageFormat::SRGBA, 
+    width, 
+    height, 
+    imgPtr, 
+    mediapipe::ImageFrame::kDefaultAlignmentBoundary);
   LOG(INFO) << "detect getImageFrame send";
   size_t frame_timestamp_us = runCounter * 1e6;
   runCounter ++;

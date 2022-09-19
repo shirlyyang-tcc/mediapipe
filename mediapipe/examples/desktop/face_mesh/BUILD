@@ -74,8 +74,9 @@ cc_binary(
     ],
     linkopts = [
         "--bind",  # Enable embind
-        "-s USE_PTHREADS=0",
-        "-s ALLOW_MEMORY_GROWTH=1",
+        "-sUSE_PTHREADS=0",
+        "-sALLOW_MEMORY_GROWTH=1",
+        "-sMODULARIZE"
         # "-I/usr/local/include/"
     ],
 )

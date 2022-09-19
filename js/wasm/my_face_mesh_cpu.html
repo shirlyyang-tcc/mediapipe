@@ -1,15 +1,58 @@
 <!DOCTYPE html>
 <html>
-    <header></header>
+    <header>
+        <style>
+            #container {
+                display: flex;
+                flex-direction: row;
+                /* flex-shrink: 0.5; */
+            }
+        </style>
+        <script src="./my_face_mesh_cpu.js"></script>
+    </header>
     <body>
+        <div id="container">
+
+        </div>
         <!--play source video-->
-        <video id="video0" src="https://webar-static.tencent-cloud.com/temp/1.mp4"></video>
+        <video 
+        id="video0" 
+        autoplay 
+        muted
+        loop
+        crossorigin="anonymous"
+        src="https://webar-static.tencent-cloud.com/temp/1.mp4"></video>
         <!--get image data from video-->
         <canvas id="proxy-canvas"></canvas>
         <!--draw facemesh result-->
         <canvas id="result-canvas"></canvas>
     </body>
     <script>
-        
+        console.log('Module',Module)
+        function main() {
+            const video = document.querySelector('#video0')
+            const proxycanvas = document.querySelector('#proxy-canvas')
+            const proxycontext = proxycanvas.getContext('2d')
+            
+            video.addEventListener('play', () => {
+                const {videoWidth, videoHeight} = video
+                proxycanvas.style.width = videoWidth
+                proxycanvas.style.height = videoHeight
+                proxycanvas.width = videoWidth
+                proxycanvas.height = videoHeight
+
+                const draw = () => {
+                    proxycontext.clearRect(0,0, videoWidth, videoHeight)
+                    proxycontext.drawImage(video, 0, 0)
+                    const imagedata = proxycontext.getImageData(0,0, videoWidth,videoHeight)
+                    // console.log('imagedata',imagedata)
+                    requestAnimationFrame(draw)
+                }
+                requestAnimationFrame(draw)
+            })
+
+            
+        }
+        main()
     </script>
 </html>

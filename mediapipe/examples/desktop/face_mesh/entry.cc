@@ -185,7 +185,7 @@ EMSCRIPTEN_BINDINGS(face_mesh) {
     .function("Test", &MppGraphManager::Test)
     .function("SetSize", &MppGraphManager::SetSize)
     .function("Initialize", &MppGraphManager::Initialize)
-    .function("Send", &MppGraphManager::Send, emscripten::allow_raw_pointers())
+    .function("Send", &MppGraphManager::Send)
     .function("GetLandmarkList", &MppGraphManager::GetLandmarkList, emscripten::allow_raw_pointers());
   emscripten::class_<absl::Status>("AbslStatus");
   emscripten::class_<Landmark>("Landmark")

@@ -45,7 +45,7 @@ cc_binary(
     name = "my_face_mesh_cpu",
     srcs = ["entry.cc"],
     visibility = ["//visibility:public"],
-    features = ["emcc_debug_link"],
+    # features = ["emcc_debug_link"],
     data = [
         "//mediapipe/modules/face_landmark:face_landmark_with_attention.tflite",
         "//mediapipe/modules/face_landmark:face_landmark.tflite",
@@ -77,7 +77,8 @@ cc_binary(
         "--bind",  # Enable embind
         "-sUSE_PTHREADS=0",
         "-sALLOW_MEMORY_GROWTH=1",
-        "-sMODULARIZE"
+        "-sMODULARIZE",
+        "--preload-file /home/shirlyyang/mediapipe/mediapipe/modules/face_landmark/face_landmark_cpu.pbtxt@face_landmark_cpu.pbtxt"
         # "-I/usr/local/include/"
     ],
 )

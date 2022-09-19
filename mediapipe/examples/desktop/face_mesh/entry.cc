@@ -70,7 +70,7 @@ mediapipe::NormalizedRect GetTestRoi() {
   result.set_height(1);
   return result;
 };
-ABSL_FLAG(std::string, calculator_graph_config_file, "/Users/shirlyyang/workspace/mediapipe/mediapipe/modules/face_landmark/face_landmark_cpu.pbtxt",
+ABSL_FLAG(std::string, calculator_graph_config_file, "face_landmark_cpu.pbtxt",
           "Name of file containing text format CalculatorGraphConfig proto.");
 // 初始化graph
 absl::Status MppGraphManager::Initialize() {

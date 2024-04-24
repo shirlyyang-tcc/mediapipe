@@ -12,18 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cstdint>
-#include <cstring>
+#include <algorithm>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/time/time.h"
 #include "mediapipe/calculators/tensor/inference_calculator.h"
 #include "mediapipe/calculators/tensor/inference_calculator_utils.h"
 #include "mediapipe/calculators/tensor/inference_interpreter_delegate_runner.h"
 #include "mediapipe/calculators/tensor/inference_runner.h"
+#include "mediapipe/calculators/tensor/tensor_span.h"
+#include "mediapipe/framework/calculator_framework.h"
+#include "mediapipe/framework/formats/tensor.h"
+#include "mediapipe/framework/port/ret_check.h"
+#include "mediapipe/framework/port/status_macros.h"
 #include "tensorflow/lite/interpreter.h"
 #if defined(MEDIAPIPE_ANDROID)
 #include "tensorflow/lite/delegates/nnapi/nnapi_delegate.h"
@@ -34,19 +40,20 @@ namespace mediapipe {
 namespace api2 {
 
 class InferenceCalculatorCpuImpl
-    : public NodeImpl<InferenceCalculatorCpu, InferenceCalculatorCpuImpl> {
+    : public InferenceCalculatorNodeImpl<InferenceCalculatorCpu,
+                                         InferenceCalculatorCpuImpl> {
  public:
   static absl::Status UpdateContract(CalculatorContract* cc);
 
   absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
   absl::Status Close(CalculatorContext* cc) override;
 
  private:
   absl::StatusOr<std::unique_ptr<InferenceRunner>> CreateInferenceRunner(
       CalculatorContext* cc);
   absl::StatusOr<TfLiteDelegatePtr> MaybeCreateDelegate(CalculatorContext* cc);
-
+  absl::StatusOr<std::vector<Tensor>> Process(
+      CalculatorContext* cc, const TensorSpan& tensor_span) override;
   std::unique_ptr<InferenceRunner> inference_runner_;
 };
 
@@ -56,25 +63,21 @@ absl::Status InferenceCalculatorCpuImpl::UpdateContract(
   RET_CHECK(!options.model_path().empty() ^ kSideInModel(cc).IsConnected())
       << "Either model as side packet or model path in options is required.";
 
+  MP_RETURN_IF_ERROR(TensorContractCheck(cc));
+
   return absl::OkStatus();
 }
 
 absl::Status InferenceCalculatorCpuImpl::Open(CalculatorContext* cc) {
-  ASSIGN_OR_RETURN(inference_runner_, CreateInferenceRunner(cc));
+  MP_ASSIGN_OR_RETURN(inference_runner_, CreateInferenceRunner(cc));
   return absl::OkStatus();
 }
 
-absl::Status InferenceCalculatorCpuImpl::Process(CalculatorContext* cc) {
-  if (kInTensors(cc).IsEmpty()) {
-    return absl::OkStatus();
-  }
-  const auto& input_tensors = *kInTensors(cc);
-  RET_CHECK(!input_tensors.empty());
-
-  ASSIGN_OR_RETURN(std::vector<Tensor> output_tensors,
-                   inference_runner_->Run(input_tensors));
-  kOutTensors(cc).Send(std::move(output_tensors));
-  return absl::OkStatus();
+absl::StatusOr<std::vector<Tensor>> InferenceCalculatorCpuImpl::Process(
+    CalculatorContext* cc, const TensorSpan& tensor_span) {
+  MP_ASSIGN_OR_RETURN(std::vector<Tensor> output_tensors,
+                      inference_runner_->Run(cc, tensor_span));
+  return output_tensors;
 }
 
 absl::Status InferenceCalculatorCpuImpl::Close(CalculatorContext* cc) {
@@ -84,11 +87,11 @@ absl::Status InferenceCalculatorCpuImpl::Close(CalculatorContext* cc) {
 
 absl::StatusOr<std::unique_ptr<InferenceRunner>>
 InferenceCalculatorCpuImpl::CreateInferenceRunner(CalculatorContext* cc) {
-  ASSIGN_OR_RETURN(auto model_packet, GetModelAsPacket(cc));
-  ASSIGN_OR_RETURN(auto op_resolver_packet, GetOpResolverAsPacket(cc));
+  MP_ASSIGN_OR_RETURN(auto model_packet, GetModelAsPacket(cc));
+  MP_ASSIGN_OR_RETURN(auto op_resolver_packet, GetOpResolverAsPacket(cc));
   const int interpreter_num_threads =
       cc->Options<mediapipe::InferenceCalculatorOptions>().cpu_num_thread();
-  ASSIGN_OR_RETURN(TfLiteDelegatePtr delegate, MaybeCreateDelegate(cc));
+  MP_ASSIGN_OR_RETURN(TfLiteDelegatePtr delegate, MaybeCreateDelegate(cc));
   return CreateInferenceInterpreterDelegateRunner(
       std::move(model_packet), std::move(op_resolver_packet),
       std::move(delegate), interpreter_num_threads);
@@ -115,7 +118,7 @@ InferenceCalculatorCpuImpl::MaybeCreateDelegate(CalculatorContext* cc) {
   const bool opts_has_delegate =
       calculator_opts.has_delegate() || !kDelegate(cc).IsEmpty();
   if (opts_has_delegate && opts_delegate.has_tflite()) {
-    // Default tflite inference requeqsted - no need to modify graph.
+    // Default tflite inference requested - no need to modify graph.
     return nullptr;
   }
 

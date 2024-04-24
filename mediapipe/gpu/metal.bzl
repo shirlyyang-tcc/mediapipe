@@ -25,8 +25,8 @@ simple data file, but in that case any declared headers are not visible to
 dependent objc_library rules.
 """
 
-load("@build_bazel_apple_support//lib:apple_support.bzl", "apple_support")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("@build_bazel_apple_support//lib:apple_support.bzl", "apple_support")
 
 # This load statement is overriding the visibility of the internal implementation of rules_apple.
 # This rule will be migrated to rules_apple in the future, hence the override. Please do not use
@@ -107,6 +107,7 @@ def _metal_library_impl(ctx):
             outputs = [obj, diagnostics, deps_dump],
             mnemonic = "MetalCompile",
             executable = "/usr/bin/xcrun",
+            toolchain = None,
             arguments = args,
             use_default_shell_env = False,
             progress_message = ("Compiling Metal shader %s" %
@@ -128,6 +129,7 @@ def _metal_library_impl(ctx):
         outputs = (output_lib,),
         mnemonic = "MetalLink",
         executable = "/usr/bin/xcrun",
+        toolchain = None,
         arguments = args,
         progress_message = (
             "Linking Metal library %s" % ctx.label.name
@@ -155,7 +157,11 @@ def _metal_library_impl(ctx):
         objc_provider,
         cc_common.merge_cc_infos(cc_infos = cc_infos),
         # Return the provider for the new bundling logic of rules_apple.
-        resources.bucketize_typed([output_lib], "unprocessed"),
+        resources.bucketize_typed(
+            bucket_type = "unprocessed",
+            expect_files = True,
+            resources = [output_lib],
+        ),
     ]
 
 METAL_LIBRARY_ATTRS = dicts.add(apple_support.action_required_attrs(), {
@@ -169,8 +175,7 @@ METAL_LIBRARY_ATTRS = dicts.add(apple_support.action_required_attrs(), {
 metal_library = rule(
     implementation = _metal_library_impl,
     attrs = METAL_LIBRARY_ATTRS,
-    fragments = ["apple", "objc", "swift"],
-    output_to_genfiles = True,
+    fragments = ["apple", "objc"],
 )
 """
 Builds a Metal library.

@@ -26,7 +26,6 @@
 #include "mediapipe/framework/collection_item_id.h"
 #include "mediapipe/framework/input_stream_shard.h"
 #include "mediapipe/framework/output_stream_shard.h"
-#include "mediapipe/framework/port/integral_types.h"
 #include "mediapipe/framework/port/logging.h"
 #include "mediapipe/framework/port/ret_check.h"
 #include "mediapipe/framework/port/status.h"
@@ -164,7 +163,7 @@ absl::Status SwitchMuxCalculator::Open(CalculatorContext* cc) {
   options_ = cc->Options<mediapipe::SwitchContainerOptions>();
   channel_index_ = tool::GetChannelIndex(*cc, channel_index_);
   channel_tags_ = ChannelTags(cc->Inputs().TagMap());
-  channel_history_[Timestamp::Unset()] = channel_index_;
+  channel_history_[Timestamp::Unstarted()] = channel_index_;
 
   // Relay side packets only from channel_index_.
   for (const std::string& tag : ChannelTags(cc->InputSidePackets().TagMap())) {

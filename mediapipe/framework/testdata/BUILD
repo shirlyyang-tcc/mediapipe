@@ -26,6 +26,12 @@ mediapipe_proto_library(
 )
 
 mediapipe_proto_library(
+    name = "sky_light_nested_calculator_proto",
+    srcs = ["sky_light_nested_calculator.proto"],
+    visibility = ["//visibility:public"],
+)
+
+mediapipe_proto_library(
     name = "night_light_calculator_proto",
     srcs = ["night_light_calculator.proto"],
     visibility = ["//visibility:public"],
@@ -33,6 +39,12 @@ mediapipe_proto_library(
         "//mediapipe/framework:calculator_options_proto",
         "//mediapipe/framework:calculator_proto",
     ],
+)
+
+mediapipe_proto_library(
+    name = "proto3_options_proto",
+    srcs = ["proto3_options.proto"],
+    visibility = ["//visibility:public"],
 )
 
 mediapipe_proto_library(
@@ -54,4 +66,5 @@ mediapipe_proto_library(
 exports_files([
     "perfetto_detailed.pbtxt",
     "perfetto_minimal.pbtxt",
+    "perfeoot_memory.pbtxt",
 ])

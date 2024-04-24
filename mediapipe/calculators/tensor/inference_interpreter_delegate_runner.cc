@@ -14,23 +14,33 @@
 
 #include "mediapipe/calculators/tensor/inference_interpreter_delegate_runner.h"
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "mediapipe/calculators/tensor/tensor_span.h"
+#include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/tensor.h"
+#include "mediapipe/framework/mediapipe_profiling.h"
 #include "mediapipe/framework/port/ret_check.h"
+#include "tensorflow/lite/c/c_api_types.h"
+#include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/interpreter.h"
 #include "tensorflow/lite/interpreter_builder.h"
+#include "tensorflow/lite/string_util.h"
 
 namespace mediapipe {
 
 namespace {
 
+using Interpreter = ::tflite::Interpreter;
+using InterpreterBuilder = ::tflite::InterpreterBuilder;
+
 template <typename T>
 void CopyTensorBufferToInterpreter(const Tensor& input_tensor,
-                                   tflite::Interpreter* interpreter,
+                                   Interpreter* interpreter,
                                    int input_tensor_index) {
   auto input_tensor_view = input_tensor.GetCpuReadView();
   auto input_tensor_buffer = input_tensor_view.buffer<T>();
@@ -39,8 +49,21 @@ void CopyTensorBufferToInterpreter(const Tensor& input_tensor,
   std::memcpy(local_tensor_buffer, input_tensor_buffer, input_tensor.bytes());
 }
 
+template <>
+void CopyTensorBufferToInterpreter<char>(const Tensor& input_tensor,
+                                         Interpreter* interpreter,
+                                         int input_tensor_index) {
+  const char* input_tensor_buffer =
+      input_tensor.GetCpuReadView().buffer<char>();
+  tflite::DynamicBuffer dynamic_buffer;
+  dynamic_buffer.AddString(input_tensor_buffer,
+                           input_tensor.shape().num_elements());
+  dynamic_buffer.WriteToTensorAsVector(
+      interpreter->tensor(interpreter->inputs()[input_tensor_index]));
+}
+
 template <typename T>
-void CopyTensorBufferFromInterpreter(tflite::Interpreter* interpreter,
+void CopyTensorBufferFromInterpreter(Interpreter* interpreter,
                                      int output_tensor_index,
                                      Tensor* output_tensor) {
   auto output_tensor_view = output_tensor->GetCpuWriteView();
@@ -55,50 +78,84 @@ void CopyTensorBufferFromInterpreter(tflite::Interpreter* interpreter,
 
 class InferenceInterpreterDelegateRunner : public InferenceRunner {
  public:
-  InferenceInterpreterDelegateRunner(
-      api2::Packet<TfLiteModelPtr> model,
-      std::unique_ptr<tflite::Interpreter> interpreter,
-      TfLiteDelegatePtr delegate)
+  InferenceInterpreterDelegateRunner(api2::Packet<TfLiteModelPtr> model,
+                                     std::unique_ptr<Interpreter> interpreter,
+                                     TfLiteDelegatePtr delegate)
       : model_(std::move(model)),
         interpreter_(std::move(interpreter)),
         delegate_(std::move(delegate)) {}
 
   absl::StatusOr<std::vector<Tensor>> Run(
-      const std::vector<Tensor>& input_tensors) override;
+      CalculatorContext* cc, const TensorSpan& tensor_span) override;
 
  private:
   api2::Packet<TfLiteModelPtr> model_;
-  std::unique_ptr<tflite::Interpreter> interpreter_;
+  std::unique_ptr<Interpreter> interpreter_;
   TfLiteDelegatePtr delegate_;
 };
 
 absl::StatusOr<std::vector<Tensor>> InferenceInterpreterDelegateRunner::Run(
-    const std::vector<Tensor>& input_tensors) {
+    CalculatorContext* cc, const TensorSpan& tensor_span) {
   // Read CPU input into tensors.
-  RET_CHECK_EQ(interpreter_->inputs().size(), input_tensors.size());
-  for (int i = 0; i < input_tensors.size(); ++i) {
+  RET_CHECK_EQ(interpreter_->inputs().size(), tensor_span.size());
+
+  // If the input tensors have dynamic shape, then the tensors need to be
+  // resized and reallocated before we can copy the tensor values.
+  bool resized_tensor_shapes = false;
+  for (int i = 0; i < tensor_span.size(); ++i) {
+    const Tensor& input_tensor = tensor_span[i];
+    if (input_tensor.shape().is_dynamic) {
+      const TfLiteTensor* interpreter_tensor =
+          interpreter_->tensor(interpreter_->inputs()[i]);
+      // TODO: Can avoid copying even these <= 4 values in the future.
+      std::vector<int> interpreter_dims{
+          interpreter_tensor->dims->data,
+          interpreter_tensor->dims->data + interpreter_tensor->dims->size};
+      if (interpreter_dims != input_tensor.shape().dims) {
+        interpreter_->ResizeInputTensorStrict(i, input_tensor.shape().dims);
+        resized_tensor_shapes = true;
+      }
+    }
+  }
+  // Reallocation is needed for memory sanity.
+  if (resized_tensor_shapes) interpreter_->AllocateTensors();
+
+  // TODO: Replace this using the util function in
+  // inference_calculator_utils.
+  for (int i = 0; i < tensor_span.size(); ++i) {
     const TfLiteType input_tensor_type =
         interpreter_->tensor(interpreter_->inputs()[i])->type;
+    const Tensor& input_tensor = tensor_span[i];
     switch (input_tensor_type) {
       case TfLiteType::kTfLiteFloat16:
       case TfLiteType::kTfLiteFloat32: {
-        CopyTensorBufferToInterpreter<float>(input_tensors[i],
-                                             interpreter_.get(), i);
+        CopyTensorBufferToInterpreter<float>(input_tensor, interpreter_.get(),
+                                             i);
         break;
       }
       case TfLiteType::kTfLiteUInt8: {
-        CopyTensorBufferToInterpreter<uint8>(input_tensors[i],
-                                             interpreter_.get(), i);
+        CopyTensorBufferToInterpreter<uint8_t>(input_tensor, interpreter_.get(),
+                                               i);
         break;
       }
       case TfLiteType::kTfLiteInt8: {
-        CopyTensorBufferToInterpreter<int8>(input_tensors[i],
-                                            interpreter_.get(), i);
+        CopyTensorBufferToInterpreter<int8_t>(input_tensor, interpreter_.get(),
+                                              i);
         break;
       }
       case TfLiteType::kTfLiteInt32: {
-        CopyTensorBufferToInterpreter<int32_t>(input_tensors[i],
-                                               interpreter_.get(), i);
+        CopyTensorBufferToInterpreter<int32_t>(input_tensor, interpreter_.get(),
+                                               i);
+        break;
+      }
+      case TfLiteType::kTfLiteString: {
+        CopyTensorBufferToInterpreter<char>(input_tensor, interpreter_.get(),
+                                            i);
+        break;
+      }
+      case TfLiteType::kTfLiteBool: {
+        CopyTensorBufferToInterpreter<bool>(input_tensor, interpreter_.get(),
+                                            i);
         break;
       }
       default:
@@ -108,8 +165,10 @@ absl::StatusOr<std::vector<Tensor>> InferenceInterpreterDelegateRunner::Run(
   }
 
   // Run inference.
-  RET_CHECK_EQ(interpreter_->Invoke(), kTfLiteOk);
-
+  {
+    MEDIAPIPE_PROFILING(CPU_TASK_INVOKE, cc);
+    RET_CHECK_EQ(interpreter_->Invoke(), kTfLiteOk);
+  }
   // Output result tensors (CPU).
   const auto& tensor_indexes = interpreter_->outputs();
   std::vector<Tensor> output_tensors;
@@ -130,22 +189,31 @@ absl::StatusOr<std::vector<Tensor>> InferenceInterpreterDelegateRunner::Run(
             Tensor::ElementType::kUInt8, shape,
             Tensor::QuantizationParameters{tensor->params.scale,
                                            tensor->params.zero_point});
-        CopyTensorBufferFromInterpreter<uint8>(interpreter_.get(), i,
-                                               &output_tensors.back());
+        CopyTensorBufferFromInterpreter<uint8_t>(interpreter_.get(), i,
+                                                 &output_tensors.back());
         break;
       case TfLiteType::kTfLiteInt8:
         output_tensors.emplace_back(
             Tensor::ElementType::kInt8, shape,
             Tensor::QuantizationParameters{tensor->params.scale,
                                            tensor->params.zero_point});
-        CopyTensorBufferFromInterpreter<int8>(interpreter_.get(), i,
-                                              &output_tensors.back());
+        CopyTensorBufferFromInterpreter<int8_t>(interpreter_.get(), i,
+                                                &output_tensors.back());
         break;
       case TfLiteType::kTfLiteInt32:
         output_tensors.emplace_back(Tensor::ElementType::kInt32, shape);
         CopyTensorBufferFromInterpreter<int32_t>(interpreter_.get(), i,
                                                  &output_tensors.back());
         break;
+      case TfLiteType::kTfLiteBool:
+        output_tensors.emplace_back(Tensor::ElementType::kBool, shape,
+                                    Tensor::QuantizationParameters{1.0f, 0});
+        CopyTensorBufferFromInterpreter<bool>(interpreter_.get(), i,
+                                              &output_tensors.back());
+        break;
+      case TfLiteType::kTfLiteString:
+        // No current use-case for copying TfLiteTensors with string type to
+        // MediaPipe Tensors.
       default:
         return absl::InvalidArgumentError(
             absl::StrCat("Unsupported output tensor type:",
@@ -160,8 +228,7 @@ CreateInferenceInterpreterDelegateRunner(
     api2::Packet<TfLiteModelPtr> model,
     api2::Packet<tflite::OpResolver> op_resolver, TfLiteDelegatePtr delegate,
     int interpreter_num_threads) {
-  tflite::InterpreterBuilder interpreter_builder(*model.Get(),
-                                                 op_resolver.Get());
+  InterpreterBuilder interpreter_builder(*model.Get(), op_resolver.Get());
   if (delegate) {
     interpreter_builder.AddDelegate(delegate.get());
   }
@@ -170,7 +237,7 @@ CreateInferenceInterpreterDelegateRunner(
 #else
   interpreter_builder.SetNumThreads(interpreter_num_threads);
 #endif  // __EMSCRIPTEN__
-  std::unique_ptr<tflite::Interpreter> interpreter;
+  std::unique_ptr<Interpreter> interpreter;
   RET_CHECK_EQ(interpreter_builder(&interpreter), kTfLiteOk);
   RET_CHECK(interpreter);
   RET_CHECK_EQ(interpreter->AllocateTensors(), kTfLiteOk);

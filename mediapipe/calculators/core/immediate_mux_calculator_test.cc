@@ -27,7 +27,6 @@
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/gmock.h"
 #include "mediapipe/framework/port/gtest.h"
-#include "mediapipe/framework/port/integral_types.h"
 #include "mediapipe/framework/port/logging.h"
 #include "mediapipe/framework/port/status.h"
 #include "mediapipe/framework/port/status_matchers.h"
@@ -191,17 +190,17 @@ class ImmediateMuxCalculatorTest : public ::testing::Test {
                                                       &graph_config_));
   }
 
-  static Packet PacketAt(int64 ts) {
-    return Adopt(new int64(999)).At(Timestamp(ts));
+  static Packet PacketAt(int64_t ts) {
+    return Adopt(new int64_t(999)).At(Timestamp(ts));
   }
   static Packet None() { return Packet().At(Timestamp::OneOverPostStream()); }
   static bool IsNone(const Packet& packet) {
     return packet.Timestamp() == Timestamp::OneOverPostStream();
   }
   // Return the values of the timestamps of a vector of Packets.
-  static std::vector<int64> TimestampValues(
+  static std::vector<int64_t> TimestampValues(
       const std::vector<Packet>& packets) {
-    std::vector<int64> result;
+    std::vector<int64_t> result;
     for (const Packet& p : packets) {
       result.push_back(p.Timestamp().Value());
     }
